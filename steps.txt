@@ -1,0 +1,3 @@
+* First, really simple implementation. The whole thing runs in about 1.6 seconds. No concurrency, although I added synchronisation from the start.
+* Added threads to run the code. That slows things down a bit. 2.2 seconds now seems to be the norm.
+* I assume lock contention is the current bottleneck. I split the large lock on balance into a lock on the from and to entries on the balance array. That brings the time down to 1.8 seconds. Nice, good guess.
