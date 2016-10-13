@@ -23,8 +23,17 @@ public class Simpleton implements API {
     // XXX very special case for bank account -> only count transfers, no
     // locking for draft, log events instead
 
+    private final Object[] locks = new Object[MAX_ACCOUNTS];
     private final int[] balance = new int[MAX_ACCOUNTS];
     private int nextTransaction = 0;
+
+    public Simpleton() {
+        super();
+
+        for (int i = 0; i < MAX_ACCOUNTS; i++) {
+            locks[i] = new Object();
+        }
+    }
 
     /**
      * @see com.ximedes.API#createAccount(int)
@@ -53,19 +62,21 @@ public class Simpleton implements API {
      * @see com.ximedes.API#transfer(int, int, int)
      */
     @Override
-    public Transaction transfer(final int from, final int to, final int amount) {
-        synchronized (balance) {
-            final Status status;
+    public Transaction transfer(final int from, final int to,
+            final int amount) {
+        Status status = CONFIRMED;
+        synchronized (locks[from]) {
             if (balance[from] < amount) {
                 status = INSUFFICIENT_FUNDS;
             } else {
-                // XXX where's the transaction
-                balance[from] -= amount;
-                balance[to] += amount;
-                status = CONFIRMED;
+                synchronized (locks[to]) {
+                    // XXX where's the transaction
+                    balance[from] -= amount;
+                    balance[to] += amount;
+                }
             }
-            return new Transaction(nextTransaction++, from, to, amount, status);
         }
+        return new Transaction(nextTransaction++, from, to, amount, status);
     }
 
     /**
