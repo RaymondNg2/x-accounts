@@ -53,19 +53,23 @@ public class Simpleton implements API {
      * @see com.ximedes.API#transfer(int, int, int)
      */
     @Override
-    public Transaction transfer(final int from, final int to, final int amount) {
+    public Transaction transfer(final int from, final int to,
+            final int amount) {
+        Status status = CONFIRMED;
+        final int transactionId;
+
         synchronized (balance) {
-            final Status status;
             if (balance[from] < amount) {
                 status = INSUFFICIENT_FUNDS;
             } else {
                 // XXX where's the transaction
                 balance[from] -= amount;
                 balance[to] += amount;
-                status = CONFIRMED;
             }
-            return new Transaction(nextTransaction++, from, to, amount, status);
+            transactionId = nextTransaction++;
         }
+
+        return new Transaction(transactionId, from, to, amount, status);
     }
 
     /**
