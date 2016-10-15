@@ -1,6 +1,5 @@
 import static com.ximedes.Status.CONFIRMED;
 import static com.ximedes.Status.INSUFFICIENT_FUNDS;
-import static io.vertx.core.Vertx.vertx;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.exit;
 import static java.lang.System.out;
@@ -22,9 +21,6 @@ import com.ximedes.Transaction;
 import com.ximedes.http.HttpApiClient;
 import com.ximedes.http.HttpApiServer;
 
-import io.vertx.core.http.HttpServer;
-import io.vertx.core.http.HttpServerOptions;
-
 // XXX test that calls return within 25ms (ON AMAZON)
 
 /**
@@ -37,16 +33,12 @@ public class BigTest {
     // for local, functional testing
     // private final API api = new Simpleton();
 
-    private final HttpServerOptions options = new HttpServerOptions()
-            .setHost("127.0.0.1").setPort(8080).setLogActivity(true);
-    // for testing locally, but with HTTP as transport
-    private final HttpServer server = vertx().createHttpServer(options)
-            .requestHandler(new HttpApiServer()).listen();
-
     private final API api = new HttpApiClient();
 
     @Test
-    public void big() throws InterruptedException {
+    public void big() throws Exception {
+        final HttpApiServer httpApiServer = new HttpApiServer();
+
         final long start = currentTimeMillis();
 
         // 1 instance, 300.000 consumer accounts, 10 cents each

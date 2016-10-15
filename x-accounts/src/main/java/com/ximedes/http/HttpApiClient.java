@@ -1,12 +1,15 @@
 package com.ximedes.http;
 
-import static io.vertx.core.Vertx.vertx;
+import static com.mashape.unirest.http.Unirest.post;
+import static com.ximedes.http.UhmParser.uhmParseUriLastInteger;
+import static java.lang.System.currentTimeMillis;
+import static java.lang.System.out;
 
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.JsonNode;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import com.ximedes.API;
 import com.ximedes.Transaction;
-
-import io.vertx.core.http.HttpClient;
-import io.vertx.core.http.HttpClientOptions;
 
 /**
  * An HTTP API client.
@@ -14,24 +17,31 @@ import io.vertx.core.http.HttpClientOptions;
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
 public class HttpApiClient implements API {
-    private final HttpClientOptions options = new HttpClientOptions()
-            .setDefaultHost("127.0.0.1").setDefaultPort(8080)
-            .setLogActivity(true);
-    private final HttpClient client = vertx().createHttpClient(options);
+    private final static String BASE_URL = "http://localhost:8080/";
 
     /**
      * @see com.ximedes.API#createAccount(int)
      */
     @Override
     public int createAccount(final int overdraft) {
+        final long start = currentTimeMillis();
+
         final String json = "{\"overdraft\":" + overdraft + "}";
-        client.post("/account", response -> {
-            System.out.println("Received response with status code "
-                    + response.statusCode());
-        }).putHeader("content-length", Integer.toString(json.length()))
-                .putHeader("content-type", "application/json").write(json)
-                .end();
-        return 12; // XXX wrong
+        try {
+            final HttpResponse<JsonNode> response = post(BASE_URL + "account")
+                    .header("Content-Type", "application/json").body(json)
+                    .asJson();
+
+            final long responseTime = currentTimeMillis() - start;
+            if (responseTime > 20) {
+                out.println("create account took " + responseTime + " ms.");
+            }
+
+            return uhmParseUriLastInteger(
+                    response.getHeaders().getFirst("Location"));
+        } catch (UnirestException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
