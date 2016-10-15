@@ -59,8 +59,7 @@ public class HttpClient {
 			return createAccount(overdraft);
 		}
 
-		// you should never get here
-		return null;
+        throw new RuntimeException("Response status should be 202 or 404 but is " + response.getStatus());
 	}
 
 	/**
@@ -97,8 +96,7 @@ public class HttpClient {
 			return transferFunds(transfer);
 		}
 
-		// you should never get here
-		return null;
+        throw new RuntimeException("Response status should be 202 or 404 but is " + response.getStatus());
 	}
 
 	/**
