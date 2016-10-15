@@ -1,1 +1,9 @@
 /target/
+.classpath
+.project
+x-accounts/target
+x-accounts/.settings
+x-accounts-test/.settings
+x-accounts/bin
+x-accounts-test/bin
+x-accounts-test/target
