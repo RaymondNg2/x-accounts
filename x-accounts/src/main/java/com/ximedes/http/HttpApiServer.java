@@ -4,6 +4,7 @@ import static com.ximedes.http.UhmParser.uhmParseJsonLastInteger;
 import static java.lang.System.err;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_METHOD_NOT_ALLOWED;
+import static javax.servlet.http.HttpServletResponse.SC_NOT_FOUND;
 import static javax.servlet.http.HttpServletResponse.SC_OK;
 
 import java.io.BufferedReader;
@@ -19,6 +20,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.ximedes.API;
 import com.ximedes.Simpleton;
+import com.ximedes.Transaction;
 
 /**
  * The server-side HTTP wrapper.
@@ -26,10 +28,18 @@ import com.ximedes.Simpleton;
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
 public class HttpApiServer extends AbstractHandler {
+    private static final String LOCATION_HEADER = "Location";
+
     private final API api = new Simpleton();
 
-    private final boolean trace = true;
+    private static final boolean trace = false;
 
+    /**
+     * Create and start a new web server on port 8080.
+     * 
+     * @throws Exception
+     *             When the web server failed to start.
+     */
     public HttpApiServer() throws Exception {
         super();
 
@@ -57,15 +67,13 @@ public class HttpApiServer extends AbstractHandler {
                 }
 
                 handlePost(request, body, response);
-                response.setStatus(SC_ACCEPTED);
             } else if (request.getMethod().charAt(0) == 'G' /* GET */) {
                 if (trace) {
                     err.println(
                             request.getMethod() + " " + request.getPathInfo());
                 }
 
-                handleGet();
-                response.setStatus(SC_OK);
+                handleGet(response);
             } else {
                 err.println("method not allowed: " + request.getMethod() + " "
                         + request.getPathInfo());
@@ -92,12 +100,31 @@ public class HttpApiServer extends AbstractHandler {
 
     private void handlePost(final HttpServletRequest request,
             final StringBuilder body, final HttpServletResponse response) {
-        final int overdraft = uhmParseJsonLastInteger(body);
-        response.addHeader("Location",
-                "/account/" + api.createAccount(overdraft));
+        // check charAt(1) since charAt(0) is a /
+        if (request.getPathInfo().charAt(1) == 'a') {
+            final int overdraft = uhmParseJsonLastInteger(body);
+            response.addHeader(LOCATION_HEADER,
+                    "/account/" + api.createAccount(overdraft));
+
+            response.setStatus(SC_ACCEPTED);
+        } else if (request.getPathInfo().charAt(1) == 't') {
+            final Transaction transfer = UhmParser.uhmParseJsonTransfer(body);
+            final Transaction transaction = api.transfer(transfer.from,
+                    transfer.to, transfer.amount);
+            response.addHeader(LOCATION_HEADER,
+                    "/transfer/" + transaction.transactionId);
+
+            response.setStatus(SC_ACCEPTED);
+        } else {
+            response.setStatus(SC_NOT_FOUND);
+        }
     }
 
-    private void handleGet() {
-        throw new Error("NOT IMPLEMENTED..."); // TODO
+    private void handleGet(final HttpServletResponse response)
+            throws IOException {
+        response.getWriter()
+                .write("{\"cents\":" + api.countCentsInTheSystem() + "}");
+
+        response.setStatus(SC_OK);
     }
 }

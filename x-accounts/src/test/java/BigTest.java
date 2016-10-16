@@ -17,8 +17,9 @@ import java.util.Random;
 import org.junit.Test;
 
 import com.ximedes.API;
-import com.ximedes.Simpleton;
 import com.ximedes.Transaction;
+import com.ximedes.http.HttpApiClient;
+import com.ximedes.http.HttpApiServer;
 
 // XXX test that calls return within 25ms (ON AMAZON)
 
@@ -30,13 +31,20 @@ import com.ximedes.Transaction;
  */
 public class BigTest {
     // for local, functional testing
-    private final API api = new Simpleton();
+    // private final API api = new Simpleton();
 
-    // private final API api = new HttpApiClient();
+    private final API api = new HttpApiClient();
 
+    /**
+     * A test case.
+     * 
+     * @throws Exception
+     *             When the test failed.
+     */
     @Test
     public void big() throws Exception {
-        // final HttpApiServer httpApiServer = new HttpApiServer();
+        @SuppressWarnings("unused")
+        final HttpApiServer httpApiServer = new HttpApiServer();
 
         final long start = currentTimeMillis();
 

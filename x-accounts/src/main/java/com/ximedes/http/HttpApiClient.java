@@ -1,6 +1,8 @@
 package com.ximedes.http;
 
+import static com.mashape.unirest.http.Unirest.get;
 import static com.mashape.unirest.http.Unirest.post;
+import static com.ximedes.Status.CONFIRMED;
 import static com.ximedes.http.UhmParser.uhmParseUriLastInteger;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.out;
@@ -19,6 +21,8 @@ import com.ximedes.Transaction;
 public class HttpApiClient implements API {
     private final static String BASE_URL = "http://localhost:8080/";
 
+    private static final int CUTOFF = 25; /* milliseconds */
+
     /**
      * @see com.ximedes.API#createAccount(int)
      */
@@ -33,7 +37,7 @@ public class HttpApiClient implements API {
                     .asJson();
 
             final long responseTime = currentTimeMillis() - start;
-            if (responseTime > 20) {
+            if (responseTime > CUTOFF) {
                 out.println("create account took " + responseTime + " ms.");
             }
 
@@ -50,7 +54,31 @@ public class HttpApiClient implements API {
     @Override
     public Transaction transfer(final int from, final int to,
             final int amount) {
-        throw new Error("NOT IMPLEMENTED..."); // TODO
+        final long start = currentTimeMillis();
+
+        // note that from and to are sent as strings and not as integer
+        final String json = "{\"from\":\"" + from + "\",\"to\":\"" + to
+                + "\",\"amount\":" + amount + "}";
+        try {
+            final HttpResponse<JsonNode> response = post(BASE_URL + "transfer")
+                    .header("Content-Type", "application/json").body(json)
+                    .asJson();
+
+            final long responseTime = currentTimeMillis() - start;
+            if (responseTime > CUTOFF) {
+                out.println("transfer took " + responseTime + " ms.");
+            }
+
+            // XXX WRONG The transaction status is not actually known at this
+            // point. So we need to change the test to fetch the transaction
+            // status after the fact.
+            return new Transaction(
+                    uhmParseUriLastInteger(
+                            response.getHeaders().getFirst("Location")),
+                    from, to, amount, CONFIRMED);
+        } catch (UnirestException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -58,7 +86,13 @@ public class HttpApiClient implements API {
      */
     @Override
     public int countCentsInTheSystem() {
-        throw new Error("NOT IMPLEMENTED..."); // TODO
-    }
+        try {
+            final HttpResponse<JsonNode> response = get(
+                    BASE_URL + "countCentsInTheSystem").asJson();
 
+            return (int) response.getBody().getObject().get("cents");
+        } catch (UnirestException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
