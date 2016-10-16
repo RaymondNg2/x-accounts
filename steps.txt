@@ -1,3 +1,4 @@
 * First, really simple implementation. The whole thing runs in about 1.6 seconds. No concurrency, although I added synchronisation from the start.
 * Added threads to run the code. That slows things down a bit. 2.2 seconds now seems to be the norm.
 * I assume lock contention is the current bottleneck. I split the large lock on balance into a lock on the from and to entries on the balance array. That brings the time down to 1.8 seconds. Nice, good guess.
+* Crap, I found a bug in my test case. I missed an indirection when selecting account ID's for transfer. This adds a whole second(!) to my times: 2.7 seconds. The good news is that this adds to the time taken by the test itself, not my code executing the actual logic.
