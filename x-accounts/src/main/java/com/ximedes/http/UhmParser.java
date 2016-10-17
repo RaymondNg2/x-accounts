@@ -1,10 +1,13 @@
 package com.ximedes.http;
 
+import static com.ximedes.utils.SneakyThrows.sneakyThrow;
 import static java.lang.Integer.parseInt;
 
-import java.util.Map;
+import java.io.IOException;
+import java.io.StringReader;
 
-import org.eclipse.jetty.util.ajax.JSON;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import com.ximedes.Transaction;
 
@@ -27,15 +30,20 @@ public class UhmParser {
         return parseInt(uri.substring(lastSlash + 1).trim());
     }
 
+    private static final JSONParser jsonParser = new JSONParser();
+
     public static Transaction uhmParseJsonTransfer(final StringBuilder json) {
-        @SuppressWarnings("unchecked")
-        final Map<String, ?> fields = (Map<String, ?>) JSON
-                .parse(json.toString());
+        try {
+            final JSONObject fields = (JSONObject) jsonParser
+                    .parse(new StringReader(json.toString()));
 
         final int from = parseInt(((String) fields.get("from")).trim());
         final int to = parseInt(((String) fields.get("to")).trim());
         final int amount = ((Long) fields.get("amount")).intValue();
 
         return new Transaction(-1, from, to, amount, null);
+        } catch (IOException e) {
+            throw sneakyThrow(e);
+        }
     }
 }
