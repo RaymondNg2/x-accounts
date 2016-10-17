@@ -43,7 +43,7 @@ public class HttpApiServer extends AbstractHandler {
     public HttpApiServer() throws Exception {
         super();
 
-        Server server = new Server(8080);
+        final Server server = new Server(8080);
         server.setHandler(this);
 
         server.start();
