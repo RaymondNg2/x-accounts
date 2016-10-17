@@ -19,7 +19,6 @@ import org.junit.Test;
 
 import com.ximedes.API;
 import com.ximedes.Transaction;
-import com.ximedes.http.HttpApiServer;
 import com.ximedes.http.HttpUrlConnectionApiClient;
 
 // XXX test that calls return within 25ms (ON AMAZON)
@@ -70,8 +69,8 @@ public class BigTest {
         }
         out.println();
 
-        @SuppressWarnings("unused")
-        final HttpApiServer httpApiServer = new HttpApiServer();
+        // @SuppressWarnings("unused")
+        // final HttpApiServer httpApiServer = new HttpApiServer();
 
         final long start = currentTimeMillis();
 
