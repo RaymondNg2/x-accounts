@@ -28,10 +28,13 @@ public class ClientMaster {
 	public void fireXimedesTest() {
 		// log the start time
 		final LocalDateTime start = LocalDateTime.now();
-		out.println("== Test started at " + start.toString() + " ==");
+		out.println("== Test started at " + start.toString());
 
 		// create the bank account
 		final int backAccountId = api.createAccount(30000000);
+		if (trace) {
+			out.println("created bankAccount " + backAccountId);
+		}
 
 		// send start command with the bankId
 		sendStartMessageToSlaves(backAccountId);
@@ -40,8 +43,8 @@ public class ClientMaster {
 		listenForSlaves();
 
 		final LocalDateTime end = LocalDateTime.now();
-		out.println("== Test ended at " + end.toString() + " ==");
-		out.println("== Test duration " + Duration.between(start, end).getSeconds() + " seconds ==");
+		out.println("== Test ended at " + end.toString());
+		out.println("== Test duration " + Duration.between(start, end).getSeconds() + " seconds");
 	}
 
 	private void sendStartMessageToSlaves(int backAccountId) {
@@ -56,7 +59,7 @@ public class ClientMaster {
 														  multicastAddressStartCommand,
 														  multicastPort);
 			if (trace) {
-				out.println("ClientMaster sends start message to ClienSlaves on multicast address " + multicastAddressStartCommand.getHostAddress() + ":" + multicastPort);
+				out.println("ClientMaster sends start message to ClientSlaves on multicast address " + multicastAddressStartCommand.getHostAddress() + ":" + multicastPort);
 			}
 
 			serverSocket.send(msgPacket);
