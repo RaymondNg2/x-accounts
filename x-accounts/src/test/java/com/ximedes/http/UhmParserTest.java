@@ -143,4 +143,18 @@ public class UhmParserTest {
         assertEquals(4, transaction.to);
         assertEquals(7, transaction.amount);
     }
+
+    /**
+     * A test case.
+     */
+    @Test
+    public void testThatFrom0IsParsed() {
+        final StringBuilder json = new StringBuilder(
+                "{\"from\":\"0\",\"to\":\"337\",\"amount\":10}");
+
+        final Transaction transaction = UhmParser.uhmParseJsonTransfer(json);
+        assertEquals(0, transaction.from);
+        assertEquals(337, transaction.to);
+        assertEquals(10, transaction.amount);
+    }
 }
