@@ -7,3 +7,12 @@
 * Tweaked the HTTP libraries with -Dhttp.maxConnections=110. That reduces the number of actual HTTP connections being set up and avoids the dreaded "java.net.SocketException: Invalid argument" messages. JProfiler tells me that JSON parsing on the server side is significant overhead (~6% cpu) but still Jetty us the big server-side hog (~25% cpu). Note that these have client and server still running in a single VM.
 * Split the server into a separate JVM on my laptop. That does not affect timing in any way, but it does give me a better view of where the server spends its time. JSON parsing is a significant contributor (~60% cpu).
 * Replaced the JSON parser with a crude string scanner that uses a *lot* of assumptions about the JSON messages to speed up parsing. This gives us an extra 10% transactions per second. We are now up at 24.000 transactions per second.
+* Using ngrep I have rough sizes of network traffic. From there I calculated the network throughput of an m3.large Amazon EC2 instance. Once we can run the test in under a minute, raw network throughput is going to be the bottleneck.
+    POST /account:  request 236 bytes, response 140 bytes (may be trimmed to 70 bytes)
+    POST /transfer: request 263 bytes, response 141 bytes (may be trimmed to 71 bytes)
+     300301 accounts of  236+140 bytes each is  112913176 bytes is about  110 MB
+    3899999 transfers of 263+141 bytes each is 1575599596 bytes is about 1502 MB
+    m3.large is rated at ~700 Mbit/s (http://stackoverflow.com/questions/18507405/ec2-instance-typess-exact-network-performance)
+    in bc(1) syntax:
+        (((263+71) * 3899999) + ((236+140) * 300301)) / (700*1024*1024/8)
+    thus, one m3.large can handle all traffic in about 20 seconds
