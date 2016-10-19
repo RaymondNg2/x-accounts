@@ -6,7 +6,7 @@
 * Switched from uni-rest to using the bare HTTPUrlConnection from the JDK. This is about 10% faster (22.000 transactions per second) but results in occasional "java.net.SocketException: Invalid argument" messages that screw up the tests. Not sure this is a valid path. Need to fiddle a little more before I abandon it.
 * Tweaked the HTTP libraries with -Dhttp.maxConnections=110. That reduces the number of actual HTTP connections being set up and avoids the dreaded "java.net.SocketException: Invalid argument" messages. JProfiler tells me that JSON parsing on the server side is significant overhead (~6% cpu) but still Jetty us the big server-side hog (~25% cpu). Note that these have client and server still running in a single VM.
 * Split the server into a separate JVM on my laptop. That does not affect timing in any way, but it does give me a better view of where the server spends its time. JSON parsing is a significant contributor (~60% cpu).
-* Replaced the JSON parser with a crude string scanner that uses a *lot* of assumptions about the JSON messages to speed up parsing. This gives us an extra 10% transactions per second. We are now up at 24.000 transactions per second.
+* Replaced the JSON parser with a crude string scanner that uses a *lot* of assumptions about the JSON messages to speed up parsing. This gives us an extra 10% transactions per second. We are now up at 24.000 transactions per second on my Macbook Air.
 * Using ngrep I have rough sizes of network traffic. From there I calculated the network throughput of an m3.large Amazon EC2 instance. Once we can run the test in under a minute, raw network throughput is going to be the bottleneck.
     POST /account:  request 236 bytes, response 140 bytes (may be trimmed to 70 bytes)
     POST /transfer: request 263 bytes, response 141 bytes (may be trimmed to 71 bytes)
@@ -16,3 +16,4 @@
     in bc(1) syntax:
         (((263+71) * 3899999) + ((236+140) * 300301)) / (700*1024*1024/8)
     thus, one m3.large can handle all traffic in about 20 seconds
+* Found a problem with the API that I made. Return values were wrong, which I now fixed. As part of the fix I have to make two calls for each transfer, not just one. One to enqueue the transfer and one to read the result. As expected this more or less halves the amount of transactions to 11.500 per second.
