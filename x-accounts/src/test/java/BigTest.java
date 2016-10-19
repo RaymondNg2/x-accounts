@@ -21,8 +21,6 @@ import com.ximedes.API;
 import com.ximedes.Transaction;
 import com.ximedes.http.HttpUrlConnectionApiClient;
 
-// XXX test that calls return within 25ms (ON AMAZON)
-
 /**
  * The big test scenario that is described on
  * https://www.ximedes.com/testing-the-sva-challange-application/
@@ -32,9 +30,6 @@ import com.ximedes.http.HttpUrlConnectionApiClient;
 public class BigTest {
     // for local, functional testing
     // private final API api = new Simpleton();
-
-    // testing over HTTP using the Uni-rest client
-    // private final API api = new HttpApiClient();
 
     // testing over HTTP using the bare Java HTTPUrlConnection client
     private final API api = new HttpUrlConnectionApiClient();
@@ -68,9 +63,6 @@ public class BigTest {
             }
         }
         out.println();
-
-        // @SuppressWarnings("unused")
-        // final HttpApiServer httpApiServer = new HttpApiServer();
 
         final long start = currentTimeMillis();
 
