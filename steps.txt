@@ -17,3 +17,4 @@
         (((263+71) * 3899999) + ((236+140) * 300301)) / (700*1024*1024/8)
     thus, one m3.large can handle all traffic in about 20 seconds
 * Found a problem with the API that I made. Return values were wrong, which I now fixed. As part of the fix I have to make two calls for each transfer, not just one. One to enqueue the transfer and one to read the result. As expected this more or less halves the amount of transactions to 11.500 per second.
+* As an experiment I configured Jetty to suppress the "Server" header on its HTTP responses. That saves some 20 bytes on each HTTP response. That may not sound like much, but on the whole test that is about 150 MB, or 5% of all traffic. Not sure it makes a difference. The tests seem to be running into GC and memory issues on the test driver side. I see multi-second pauses there.

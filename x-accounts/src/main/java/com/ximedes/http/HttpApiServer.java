@@ -16,8 +16,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.ximedes.API;
@@ -46,7 +50,17 @@ public class HttpApiServer extends AbstractHandler {
     public HttpApiServer() throws Exception {
         super();
 
-        final Server server = new Server(8080);
+        // A lot of work only so that we can suppress sending the "Server"
+        // header in the HTTP responses.
+        final HttpConfiguration httpConfiguration = new HttpConfiguration();
+        httpConfiguration.setSendServerVersion(false);
+        final HttpConnectionFactory httpFactory = new HttpConnectionFactory(
+                httpConfiguration);
+        final Server server = new Server();
+        final ServerConnector serverConnector = new ServerConnector(server,
+                httpFactory);
+        serverConnector.setPort(8080);
+        server.setConnectors(new Connector[] { serverConnector });
         server.setHandler(this);
 
         server.start();
