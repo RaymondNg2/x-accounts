@@ -1,5 +1,6 @@
 import static com.ximedes.Status.CONFIRMED;
 import static com.ximedes.Status.INSUFFICIENT_FUNDS;
+import static java.lang.Math.max;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.exit;
 import static java.lang.System.out;
@@ -33,6 +34,18 @@ public class BigTest {
 
     // testing over HTTP using the bare Java HTTPUrlConnection client
     private final API api = new HttpUrlConnectionApiClient();
+
+    private static final Object transferCountLock = new Object();
+    private static int transferCount = 0;
+    private static int highestTransferId = -1;
+
+    private static void register(final Transaction transaction) {
+        synchronized (transferCountLock) {
+            transferCount++;
+            highestTransferId = max(highestTransferId,
+                    transaction.transactionId);
+        }
+    }
 
     /**
      * A test case.
@@ -78,9 +91,6 @@ public class BigTest {
         final List<Integer> consumerAccounts = synchronizedList(
                 new ArrayList<Integer>());
 
-        final List<Transaction> transactions = synchronizedList(
-                new ArrayList<Transaction>());
-
         final Thread[] machines = new Thread[10];
         // 10 machines each run ...
         for (int machine = 0; machine < 10; machine++) {
@@ -89,7 +99,7 @@ public class BigTest {
                 public void run() {
                     try {
                         machineRun(bankAccount, merchantAccounts,
-                                consumerAccounts, transactions);
+                                consumerAccounts);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                         exit(1);
@@ -105,14 +115,13 @@ public class BigTest {
         // after all is done...
         assertEquals(300, merchantAccounts.size());
         assertEquals(300000, consumerAccounts.size());
-        assertEquals(300000 + 3600000, transactions.size());
-        assertEquals(300000 + 3600000 - 1,
-                transactions.get(transactions.size() - 1).transactionId);
+        assertEquals(300000 + 3600000, transferCount);
+        assertEquals(300000 + 3600000 - 1, highestTransferId);
 
         final long elapsedSeconds = MILLISECONDS
                 .toSeconds(currentTimeMillis() - start);
-        final long transactionsPerSecond = transactions.size() / elapsedSeconds;
-        out.println("processed " + transactions.size() + " in " + elapsedSeconds
+        final long transactionsPerSecond = transferCount / elapsedSeconds;
+        out.println("processed " + transferCount + " in " + elapsedSeconds
                 + " seconds: " + transactionsPerSecond
                 + " transactions per second.");
 
@@ -122,16 +131,14 @@ public class BigTest {
 
     private void machineRun(final int bankAccount,
             final List<Integer> merchantAccounts,
-            final List<Integer> consumerAccounts,
-            final List<Transaction> transactions) throws InterruptedException {
+            final List<Integer> consumerAccounts) throws InterruptedException {
         // 10 threads that each run 3x ...
         final Thread[] threads = new Thread[10];
         for (int thread = 0; thread < 10; thread++) {
             threads[thread] = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    threadRun(bankAccount, merchantAccounts, consumerAccounts,
-                            transactions);
+                    threadRun(bankAccount, merchantAccounts, consumerAccounts);
                 }
             });
             threads[thread].start();
@@ -143,26 +150,24 @@ public class BigTest {
 
     private void threadRun(final int bankAccount,
             final List<Integer> merchantAccounts,
-            final List<Integer> consumerAccounts,
-            final List<Transaction> transactions) {
+            final List<Integer> consumerAccounts) {
         for (int iteration = 0; iteration < 3; iteration++) {
 
             // XXX wrong level, needs to be up one level
             final int newMerchantAccount = createOneMerchantAccount();
             final Collection<Integer> newConsumerAccounts = create1000ConsumerAccounts();
-            seedConsumerAccountsFromBank(bankAccount, newConsumerAccounts,
-                    transactions);
+            seedConsumerAccountsFromBank(bankAccount, newConsumerAccounts);
 
             // put the newcomers into the pool
             merchantAccounts.add(newMerchantAccount);
             consumerAccounts.addAll(newConsumerAccounts);
 
-            transferFromConsumersToMerchants(consumerAccounts, merchantAccounts,
-                    transactions);
+            transferFromConsumersToMerchants(consumerAccounts,
+                    merchantAccounts);
 
             out.println("merchants: " + merchantAccounts.size()
                     + ", consumers: " + consumerAccounts.size()
-                    + ", transactions: " + transactions.size());
+                    + ", transactions: " + transferCount);
         }
     }
 
@@ -191,8 +196,7 @@ public class BigTest {
     }
 
     private void seedConsumerAccountsFromBank(final int bankAccount,
-            final Collection<Integer> consumerAccounts,
-            final Collection<Transaction> transactions) {
+            final Collection<Integer> consumerAccounts) {
         for (Integer consumerAccount : consumerAccounts) {
             final int transferId = api.transfer(bankAccount, consumerAccount,
                     10);
@@ -204,14 +208,13 @@ public class BigTest {
             assertTrue(CONFIRMED == transaction.status
                     || INSUFFICIENT_FUNDS == transaction.status);
 
-            transactions.add(transaction);
+            register(transaction);
         }
     }
 
     private void transferFromConsumersToMerchants(
             final List<Integer> consumerAccounts,
-            final List<Integer> merchantAccounts,
-            final Collection<Transaction> transactions) {
+            final List<Integer> merchantAccounts) {
         final Random random = new Random();
 
         for (int i = 0; i < 12000; i++) {
@@ -228,7 +231,7 @@ public class BigTest {
             assertEquals(merchantAccount, transaction.to);
             assertEquals(1, transaction.amount);
 
-            transactions.add(transaction);
+            register(transaction);
         }
     }
 }
