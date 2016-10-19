@@ -115,11 +115,11 @@ public class ClientSlave {
 			}
 			// transfer 10 cents from bank account to 100 consumers
 			consumerAccounts.forEach(consumerAccount -> {
-				int transactionId = api.transfer(bankAccount, consumerAccount, 10).transactionId;
+				final int transactionId = api.transfer(bankAccount, consumerAccount, 10);
 				transfers.add(transactionId);
 			});
 
-			/* All 1000 cunsumers now has 10 cents */
+			/* All 1000 consumers now have 10 cents */
 			// in random order 12 transfers are made from each consumer to the merchant
 			if (trace) {
 				out.println("in random order 12 transfers are made from each consumer to the merchant");

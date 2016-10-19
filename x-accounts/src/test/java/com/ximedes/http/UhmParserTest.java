@@ -1,5 +1,6 @@
 package com.ximedes.http;
 
+import static com.ximedes.Status.CONFIRMED;
 import static com.ximedes.http.UhmParser.uhmParseJsonLastInteger;
 import static org.junit.Assert.assertEquals;
 
@@ -156,5 +157,21 @@ public class UhmParserTest {
         assertEquals(0, transaction.from);
         assertEquals(337, transaction.to);
         assertEquals(10, transaction.amount);
+    }
+
+    /**
+     * A test case.
+     */
+    @Test
+    public void testThatFullTransferParsed() {
+        final StringBuilder json = new StringBuilder(
+                "{\"transactionId\":\"51\",\"from\":\"0\",\"to\":\"9\",\"amount\":10,\"status\":\"CONFIRMED\"}");
+
+        final Transaction transaction = UhmParser.uhmParseJsonTransfer(json);
+        assertEquals(51, transaction.transactionId);
+        assertEquals(0, transaction.from);
+        assertEquals(9, transaction.to);
+        assertEquals(10, transaction.amount);
+        assertEquals(CONFIRMED, transaction.status);
     }
 }

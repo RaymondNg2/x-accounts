@@ -1,27 +1,23 @@
 package com.ximedes.http;
 
-import static com.ximedes.Status.CONFIRMED;
+import static com.ximedes.http.UhmParser.uhmParseJsonAccount;
+import static com.ximedes.http.UhmParser.uhmParseJsonLastInteger;
+import static com.ximedes.http.UhmParser.uhmParseJsonTransfer;
 import static com.ximedes.http.UhmParser.uhmParseUriLastInteger;
 import static com.ximedes.utils.SneakyThrows.sneakyThrow;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.zip.GZIPInputStream;
-
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 
 import com.ximedes.API;
+import com.ximedes.Account;
 import com.ximedes.Transaction;
 
 /**
@@ -30,13 +26,24 @@ import com.ximedes.Transaction;
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
 public class HttpUrlConnectionApiClient implements API {
-    private static final URL accountUrl = mkUrl("account");
-    private static final URL transferUrl = mkUrl("transfer");
-    private static final URL countUrl = mkUrl("countCentsInTheSystem");
+    private static final String urlBase = "http://127.0.0.1:8080/";
+    private final URL pingUrl;
+    private static final String accountUrlBase = urlBase + "account/";
+    private final URL accountUrl;
+    private static final String transferUrlBase = urlBase + "transfer/";
+    private final URL transferUrl;
+    private final String countUrl = urlBase + "countCentsInTheSystem";
 
-    private static URL mkUrl(final String path) {
+    /**
+     * Create the URLs. We use both strings and URL objects to avoid creating
+     * lots of identical URL objects for the POST requests. For the GET requests
+     * we still have to create URLs on the fly.
+     */
+    public HttpUrlConnectionApiClient() {
         try {
-            return new URL("http://localhost:8080/" + path);
+            pingUrl = new URL(urlBase + "ping");
+            accountUrl = new URL(urlBase + "account");
+            transferUrl = new URL(urlBase + "transfer");
         } catch (MalformedURLException e) {
             throw sneakyThrow(e);
         }
@@ -68,11 +75,19 @@ public class HttpUrlConnectionApiClient implements API {
     }
 
     /**
+     * @see com.ximedes.API#getAccount(int)
+     */
+    @Override
+    public Account getAccount(final int accountId) {
+        final StringBuilder json = getAndReadBody(accountUrlBase + accountId);
+        return uhmParseJsonAccount(json);
+    }
+
+    /**
      * @see com.ximedes.API#transfer(int, int, int)
      */
     @Override
-    public Transaction transfer(final int from, final int to,
-            final int amount) {
+    public int transfer(final int from, final int to, final int amount) {
         final long start = currentTimeMillis();
 
         // note that from and to are sent as strings and not as integer
@@ -86,11 +101,26 @@ public class HttpUrlConnectionApiClient implements API {
             out.println("transfer took " + responseTime + " ms.");
         }
 
-        // XXX WRONG The transaction status is not actually known at this
-        // point. So we need to change the test to fetch the transaction
-        // status after the fact.
-        return new Transaction(uhmParseUriLastInteger(locationHeader), from, to,
-                amount, CONFIRMED);
+        return uhmParseUriLastInteger(locationHeader);
+    }
+
+    /**
+     * @see com.ximedes.API#getTransfer(int)
+     */
+    @Override
+    public Transaction getTransfer(final int transferId) {
+        final StringBuilder json = getAndReadBody(transferUrlBase + transferId);
+        return uhmParseJsonTransfer(json);
+    }
+
+    // --- the non-standard methods are below
+
+    /**
+     * @see com.ximedes.API#ping()
+     */
+    @Override
+    public void ping() {
+        postAndReturnLocationHeader(pingUrl, null);
     }
 
     /**
@@ -98,13 +128,11 @@ public class HttpUrlConnectionApiClient implements API {
      */
     @Override
     public int countCentsInTheSystem() {
-        final JSONObject response = getAndParseBodyAsJson(countUrl);
-        return ((Number) response.get("cents")).intValue();
+        final StringBuilder json = getAndReadBody(countUrl);
+        return uhmParseJsonLastInteger(json);
     }
 
     // --- the HTTP client implementation is below
-
-    private final JSONParser jsonParser = new JSONParser();
 
     private String postAndReturnLocationHeader(final URL url,
             final String json) {
@@ -129,45 +157,30 @@ public class HttpUrlConnectionApiClient implements API {
         }
     }
 
-    private JSONObject getAndParseBodyAsJson(final URL url) {
+    private StringBuilder getAndReadBody(final String url) {
         try {
-            final HttpURLConnection response = sendRequest("GET", url, null,
-                    false);
+            final HttpURLConnection response = sendRequest("GET", new URL(url),
+                    null, false);
 
-            final InputStream is;
-            if ("gzip".equals(response.getContentEncoding())) {
-                is = new GZIPInputStream(new BufferedInputStream(
-                        response.getInputStream(), BUFSIZE));
-            } else {
-                is = new BufferedInputStream(response.getInputStream(),
-                        BUFSIZE);
+            final BufferedReader is = new BufferedReader(
+                    new InputStreamReader(response.getInputStream()));
+            final StringBuilder body = new StringBuilder();
+            String line = null;
+            while ((line = is.readLine()) != null) {
+                body.append(line);
             }
 
-            final ByteArrayOutputStream bytes = new ByteArrayOutputStream(
-                    BUFSIZE);
-            final byte[] buffer = new byte[BUFSIZE];
-            int bytesRead = 0;
-            do {
-                bytesRead = is.read(buffer);
-                if (bytesRead != -1) {
-                    bytes.write(buffer, 0, bytesRead);
-                }
-            } while (bytesRead != -1);
             is.close();
 
             if (trace) {
-                out.println("<-- " + bytes);
+                out.println("<-- " + body);
             }
 
-            return (JSONObject) jsonParser.parse(new InputStreamReader(
-                    new ByteArrayInputStream(bytes.toByteArray())));
+            return body;
         } catch (IOException e) {
             throw sneakyThrow(e);
         }
-
     }
-
-    private static final int BUFSIZE = 16 * 1024; // 16k
 
     private HttpURLConnection sendRequest(final String method, final URL url,
             final String body, final boolean doOutput) throws IOException {

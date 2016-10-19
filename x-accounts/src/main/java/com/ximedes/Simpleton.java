@@ -11,21 +11,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
 public class Simpleton implements API {
-    // 300.000 consumer accounts, 300 merchant accounts and 1 back account
-    private static final int MAX_ACCOUNTS = 300301;
-
-    // Operations on 'overdrafts' and 'nextAccount' are synchronised on the
-    // 'overdrafts' object monitor.
     private final AtomicInteger nextAccount = new AtomicInteger(0);
 
-    // XXX only the bank has overdraft --> make special case
-
-    // XXX very special case for bank account -> only count transfers, no
-    // locking for draft, log events instead
-
+    // 300.000 consumer accounts, 300 merchant accounts and 1 back account
+    private static final int MAX_ACCOUNTS = 300301;
     private final Object[] locks = new Object[MAX_ACCOUNTS];
     private final int[] balance = new int[MAX_ACCOUNTS];
-    private AtomicInteger nextTransaction = new AtomicInteger(0);
+
+    private int bankOverdraft = -1;
+
+    // It's a bit less than that, but let's not be picky about some RAM.
+    private static final int EXPECTED_TRANSFERS = 4000000;
+    private final Transaction[] transfers = new Transaction[EXPECTED_TRANSFERS];
+    private final AtomicInteger nextTransaction = new AtomicInteger(0);
 
     /**
      * Create a new backend server, setting up the per-account lock for each
@@ -51,6 +49,7 @@ public class Simpleton implements API {
                                 + nextAccount.get());
             }
             balance[0] = overdraft;
+            bankOverdraft = overdraft;
         } else if (overdraft != 0) {
             throw new IllegalArgumentException(
                     "expected overdraft to be 0, found " + overdraft);
@@ -63,11 +62,19 @@ public class Simpleton implements API {
     }
 
     /**
+     * @see com.ximedes.API#getAccount(int)
+     */
+    @Override
+    public Account getAccount(final int accountId) {
+        return new Account(accountId, balance[accountId],
+                accountId == 0 ? bankOverdraft : 0);
+    }
+
+    /**
      * @see com.ximedes.API#transfer(int, int, int)
      */
     @Override
-    public Transaction transfer(final int from, final int to,
-            final int amount) {
+    public int transfer(final int from, final int to, final int amount) {
         Status status = CONFIRMED;
 
         // To reduce lock contention we lock the "from" address separately from
@@ -93,8 +100,26 @@ public class Simpleton implements API {
             }
         }
 
-        return new Transaction(nextTransaction.getAndIncrement(), from, to,
-                amount, status);
+        final Transaction transfer = new Transaction(
+                nextTransaction.getAndIncrement(), from, to, amount, status);
+        transfers[transfer.transactionId] = transfer;
+        return transfer.transactionId;
+    }
+
+    /**
+     * @see com.ximedes.API#getTransfer(int)
+     */
+    @Override
+    public Transaction getTransfer(final int transferId) {
+        return transfers[transferId];
+    }
+
+    /**
+     * @see com.ximedes.API#ping()
+     */
+    @Override
+    public void ping() {
+        // just return quickly...
     }
 
     /**

@@ -147,7 +147,6 @@ public class BigTest {
         for (int thread = 0; thread < 10; thread++) {
             threads[thread].join();
         }
-
     }
 
     private void threadRun(final int bankAccount,
@@ -203,8 +202,9 @@ public class BigTest {
             final Collection<Integer> consumerAccounts,
             final Collection<Transaction> transactions) {
         for (Integer consumerAccount : consumerAccounts) {
-            final Transaction transaction = api.transfer(bankAccount,
-                    consumerAccount, 10);
+            final int transferId = api.transfer(bankAccount, consumerAccount,
+                    10);
+            final Transaction transaction = api.getTransfer(transferId);
 
             assertEquals(bankAccount, transaction.from);
             assertEquals(consumerAccount.intValue(), transaction.to);
@@ -227,8 +227,9 @@ public class BigTest {
                     .get(random.nextInt(consumerAccounts.size()));
             final int merchantAccount = merchantAccounts
                     .get(random.nextInt(merchantAccounts.size()));
-            final Transaction transaction = api.transfer(consumerAccount,
+            final int transferId = api.transfer(consumerAccount,
                     merchantAccount, 1);
+            final Transaction transaction = api.getTransfer(transferId);
 
             assertNotEquals(0, transaction.transactionId);
             assertEquals(consumerAccount, transaction.from);

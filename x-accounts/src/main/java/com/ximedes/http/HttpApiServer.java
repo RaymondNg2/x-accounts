@@ -1,6 +1,8 @@
 package com.ximedes.http;
 
 import static com.ximedes.http.UhmParser.uhmParseJsonLastInteger;
+import static com.ximedes.http.UhmParser.uhmParseJsonTransfer;
+import static com.ximedes.http.UhmParser.uhmParseUriLastInteger;
 import static java.lang.System.err;
 import static javax.servlet.http.HttpServletResponse.SC_ACCEPTED;
 import static javax.servlet.http.HttpServletResponse.SC_METHOD_NOT_ALLOWED;
@@ -19,6 +21,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.ximedes.API;
+import com.ximedes.Account;
 import com.ximedes.Simpleton;
 import com.ximedes.Transaction;
 
@@ -73,7 +76,7 @@ public class HttpApiServer extends AbstractHandler {
                             request.getMethod() + " " + request.getPathInfo());
                 }
 
-                handleGet(response);
+                handleGet(request, response);
             } else {
                 err.println("method not allowed: " + request.getMethod() + " "
                         + request.getPathInfo());
@@ -101,30 +104,63 @@ public class HttpApiServer extends AbstractHandler {
     private void handlePost(final HttpServletRequest request,
             final StringBuilder body, final HttpServletResponse response) {
         // check charAt(1) since charAt(0) is a /
-        if (request.getPathInfo().charAt(1) == 'a') {
+        switch (request.getPathInfo().charAt(1)) {
+        case 'a':
             final int overdraft = uhmParseJsonLastInteger(body);
             response.addHeader(LOCATION_HEADER,
                     "/account/" + api.createAccount(overdraft));
 
             response.setStatus(SC_ACCEPTED);
-        } else if (request.getPathInfo().charAt(1) == 't') {
-            final Transaction transfer = UhmParser.uhmParseJsonTransfer(body);
-            final Transaction transaction = api.transfer(transfer.from,
-                    transfer.to, transfer.amount);
-            response.addHeader(LOCATION_HEADER,
-                    "/transfer/" + transaction.transactionId);
+            break;
+        case 't':
+            final Transaction transfer = uhmParseJsonTransfer(body);
+            final int transferId = api.transfer(transfer.from, transfer.to,
+                    transfer.amount);
+            response.addHeader(LOCATION_HEADER, "/transfer/" + transferId);
 
             response.setStatus(SC_ACCEPTED);
-        } else {
+            break;
+        default:
             response.setStatus(SC_NOT_FOUND);
         }
     }
 
-    private void handleGet(final HttpServletResponse response)
-            throws IOException {
-        response.getWriter()
-                .write("{\"cents\":" + api.countCentsInTheSystem() + "}");
+    private void handleGet(final HttpServletRequest request,
+            final HttpServletResponse response) throws IOException {
+        // check charAt(1) since charAt(0) is a /
+        switch (request.getPathInfo().charAt(1)) {
+        case 'a':
+            final int accountId = uhmParseUriLastInteger(request.getPathInfo());
+            final Account account = api.getAccount(accountId);
+            response.getWriter()
+                    .write("{\"accountId\":\"" + account.accountId
+                            + "\",\"balance\":" + account.balance
+                            + ",\"overdraft\":" + account.overdraft + "}");
+            response.setStatus(SC_OK);
+            break;
+        case 't':
+            final int transferId = uhmParseUriLastInteger(
+                    request.getPathInfo());
+            final Transaction transfer = api.getTransfer(transferId);
+            response.getWriter()
+                    .write("{\"transactionId\":\"" + transfer.transactionId
+                            + "\",\"from\":\"" + transfer.from + "\",\"to\":\""
+                            + transfer.to + "\",\"amount\":" + transfer.amount
+                            + ",\"status\":\"" + transfer.status + "\"}");
+            response.setStatus(SC_OK);
+            break;
+        case 'p':
+            api.ping();
+            response.setStatus(SC_OK);
+            break;
+        case 'c':
+            response.getWriter()
+                    .write("{\"cents\":" + api.countCentsInTheSystem() + "}");
+            response.setStatus(SC_OK);
+            break;
+        default:
+            response.setStatus(SC_NOT_FOUND);
+        }
 
-        response.setStatus(SC_OK);
     }
 }
