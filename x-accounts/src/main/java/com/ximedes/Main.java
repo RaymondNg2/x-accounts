@@ -1,6 +1,7 @@
 package com.ximedes;
 
 import static java.lang.Long.MAX_VALUE;
+import static java.lang.System.err;
 import static java.lang.System.out;
 
 import java.util.Map;
@@ -47,5 +48,6 @@ public class Main {
         final HttpApiServer httpApiServer = new HttpApiServer();
 
         Thread.sleep(MAX_VALUE);
+        err.println("Done sleeping...");
     }
 }
