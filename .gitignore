@@ -7,3 +7,4 @@ x-accounts-test/.settings
 x-accounts/bin
 x-accounts-test/bin
 x-accounts-test/target
+dependency-reduced-pom.xml
