@@ -86,11 +86,11 @@ public class BigTest {
 
         // 1 * 10 * 10 * 3 = 300 instances
         final List<Integer> merchantAccounts = synchronizedList(
-                new ArrayList<Integer>());
+                new ArrayList<Integer>(300));
 
         // 1000 * 10 * 10 * 3 = 300.000 instances
         final List<Integer> consumerAccounts = synchronizedList(
-                new ArrayList<Integer>());
+                new ArrayList<Integer>(300000));
 
         final Thread[] machines = new Thread[10];
         // 10 machines each run ...
