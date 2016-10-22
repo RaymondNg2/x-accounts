@@ -19,7 +19,8 @@ public class ClientMaster {
 	private static final boolean trace = false;
 	private static final int amountTestingNodes = 1;
 
-	private final API api = new HttpApiClient();
+    private final API api = new HttpApiClient("http://127.0.0.1:8080/",
+            110, 110);
 	private final InetAddress multicastAddressStartCommand;
 	private final InetAddress multicastAddressListen;
 	private final int multicastPort = 24625;

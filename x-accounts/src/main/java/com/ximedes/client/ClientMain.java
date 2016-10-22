@@ -1,3 +1,5 @@
+package com.ximedes.client;
+
 import static com.ximedes.Status.CONFIRMED;
 import static com.ximedes.Status.INSUFFICIENT_FUNDS;
 import static java.lang.Math.max;
@@ -15,11 +17,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.Test;
-
 import com.ximedes.API;
 import com.ximedes.Transaction;
-import com.ximedes.client.HttpApiClient;
 
 /**
  * The big test scenario that is described on
@@ -27,13 +26,12 @@ import com.ximedes.client.HttpApiClient;
  * 
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
-public class BigTest {
+public class ClientMain {
     // for local, functional testing
     // private final API api = new Simpleton();
 
-    // testing over HTTP using the bare Java HTTPUrlConnection client
-    // private final API api = new HttpUrlConnectionApiClient();
-    private final API api = new HttpApiClient();
+    private static final API api = new HttpApiClient("http://127.0.0.1:8080/",
+            110, 110);
 
     private static final Object transferCountLock = new Object();
     private static int transferCount = 0;
@@ -47,14 +45,7 @@ public class BigTest {
         }
     }
 
-    /**
-     * A test case.
-     * 
-     * @throws Exception
-     *             When the test failed.
-     */
-    @Test
-    public void big() throws Exception {
+    public static void main(final String[] args) throws Exception {
         final long start = currentTimeMillis();
 
         // 1 instance, 300.000 consumer accounts, 10 cents each
@@ -107,7 +98,7 @@ public class BigTest {
         assertEquals(centsInTheSystem, finalCentsInTheSystem);
     }
 
-    private void machineRun(final int bankAccount,
+    private static void machineRun(final int bankAccount,
             final List<Integer> merchantAccounts,
             final List<Integer> consumerAccounts) throws InterruptedException {
         // 10 threads that each run 3x ...
@@ -126,7 +117,7 @@ public class BigTest {
         }
     }
 
-    private void threadRun(final int bankAccount,
+    private static void threadRun(final int bankAccount,
             final List<Integer> merchantAccounts,
             final List<Integer> consumerAccounts) {
         for (int iteration = 0; iteration < 3; iteration++) {
@@ -149,20 +140,20 @@ public class BigTest {
         }
     }
 
-    private int createOneBankAccount(final int centsInTheSystem) {
+    private static int createOneBankAccount(final int centsInTheSystem) {
         final int bankAccount = api.createAccount(centsInTheSystem);
         assertEquals(0, bankAccount);
 
         return bankAccount;
     }
 
-    private int createOneMerchantAccount() {
+    private static int createOneMerchantAccount() {
         final int merchantAccountId = api.createAccount(0);
         assertNotEquals(0, merchantAccountId);
         return merchantAccountId;
     }
 
-    private Collection<Integer> create1000ConsumerAccounts() {
+    private static Collection<Integer> create1000ConsumerAccounts() {
         final Collection<Integer> consumerAccounts = new ArrayList<Integer>();
         for (int i = 0; i < 1000; i++) {
             final int consumerAccountId = api.createAccount(0);
@@ -173,7 +164,7 @@ public class BigTest {
         return consumerAccounts;
     }
 
-    private void seedConsumerAccountsFromBank(final int bankAccount,
+    private static void seedConsumerAccountsFromBank(final int bankAccount,
             final Collection<Integer> consumerAccounts) {
         for (Integer consumerAccount : consumerAccounts) {
             final int transferId = api.transfer(bankAccount, consumerAccount,
@@ -190,7 +181,7 @@ public class BigTest {
         }
     }
 
-    private void transferFromConsumersToMerchants(
+    private static void transferFromConsumersToMerchants(
             final List<Integer> consumerAccounts,
             final List<Integer> merchantAccounts) {
         final Random random = new Random();

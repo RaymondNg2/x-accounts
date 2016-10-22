@@ -6,26 +6,34 @@ import static java.lang.System.exit;
 import java.io.IOException;
 
 import com.ximedes.API;
-import com.ximedes.Simpleton;
 
 /**
  * The server-side HTTP wrapper.
  *
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
-public class HttpApiServer {
-    private final API api = new Simpleton();
-    private final WebServer webServer = new WebServer(8080, 1024, 150, api);
-
+class HttpApiServer {
     /**
      * Create and start a new web server on port 8080.
      * 
+     * @param port
+     *            The port to listed on.
+     * @param backlog
+     *            The backlog to use from the application, note that the
+     *            effective value is determined by a combination of this value
+     *            and the <code>ulimit(1)</code. settings for the running user.
+     * @param poolsize
+     *            The number of HTTP handling threads to spawn.
+     * @param api
+     *            The API to call when a request comes in and was parsed.
      * @throws Exception
      *             When the web server failed to start.
      */
-    public HttpApiServer() throws Exception {
+    public HttpApiServer(final int port, final int backlog, final int poolsize,
+            final API api) throws Exception {
         super();
 
+        final WebServer webServer = new WebServer(port, backlog, poolsize, api);
         new Thread(new Runnable() {
             @Override
             public void run() {

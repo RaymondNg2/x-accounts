@@ -17,7 +17,7 @@ import com.ximedes.API;
  *
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
-public class WebServer {
+class WebServer {
     private final int port;
     private final int backlog;
     private final int poolsize;

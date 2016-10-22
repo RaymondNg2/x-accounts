@@ -23,13 +23,30 @@ import com.ximedes.Transaction;
  * 
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
-public class HttpApiClient implements API {
-    private final static String BASE_URL = "http://localhost:8080/";
-
+class HttpApiClient implements API {
     private static final int CUTOFF = 2500; /* milliseconds */
 
-    static {
-        Unirest.setConcurrency(110, 110);
+    private final String baseUrl;
+
+    /**
+     * Set up a new HTTP API client, specifying the base URL for the server to
+     * connect to.
+     * 
+     * @param baseUrl
+     *            The base URL (including trailing slash).
+     * @param maxTotal
+     *            Defines the overall connection limit for a connection pool.
+     * @param maxPerRoute
+     *            Defines a connection limit per one HTTP route (this can be
+     *            considered a per target host limit).
+     */
+    public HttpApiClient(final String baseUrl, final int maxTotal,
+            final int maxPerRoute) {
+        super();
+
+        this.baseUrl = baseUrl;
+
+        Unirest.setConcurrency(maxTotal, maxPerRoute);
     }
 
     /**
@@ -41,7 +58,7 @@ public class HttpApiClient implements API {
 
         final String json = "{\"overdraft\":" + overdraft + "}";
         try {
-            final HttpResponse<JsonNode> response = post(BASE_URL + "account")
+            final HttpResponse<JsonNode> response = post(baseUrl + "account")
                     .header("Content-Type", "application/json").body(json)
                     .asJson();
 
@@ -68,7 +85,7 @@ public class HttpApiClient implements API {
         final String json = "{\"from\":\"" + from + "\",\"to\":\"" + to
                 + "\",\"amount\":" + amount + "}";
         try {
-            final HttpResponse<JsonNode> response = post(BASE_URL + "transfer")
+            final HttpResponse<JsonNode> response = post(baseUrl + "transfer")
                     .header("Content-Type", "application/json").body(json)
                     .asJson();
 
@@ -104,7 +121,7 @@ public class HttpApiClient implements API {
     public int countCentsInTheSystem() {
         try {
             final HttpResponse<JsonNode> response = get(
-                    BASE_URL + "countCentsInTheSystem").asJson();
+                    baseUrl + "countCentsInTheSystem").asJson();
 
             return (int) response.getBody().getObject().get("cents");
         } catch (UnirestException e) {
@@ -116,21 +133,36 @@ public class HttpApiClient implements API {
      * @see com.ximedes.API#getAccount(int)
      */
     @Override
-    public Account getAccount(int accountId) {
-        throw new Error("NOT IMPLEMENTED..."); // TODO
+    public Account getAccount(final int accountId) {
+        final long start = currentTimeMillis();
+
+        try {
+            final HttpResponse<JsonNode> response = get(
+                    baseUrl + "account/" + accountId).asJson();
+
+            final long responseTime = currentTimeMillis() - start;
+            if (responseTime > CUTOFF) {
+                out.println("GET transfer took " + responseTime + " ms.");
+            }
+
+            final JSONObject json = response.getBody().getObject();
+            return new Account(accountId, json.getInt("balance"),
+                    json.getInt("overdraft"));
+        } catch (UnirestException e) {
+            throw sneakyThrow(e);
+        }
     }
 
     /**
      * @see com.ximedes.API#getTransfer(int)
      */
     @Override
-    public Transaction getTransfer(int transferId) {
-
+    public Transaction getTransfer(final int transferId) {
         final long start = currentTimeMillis();
 
         try {
-            final HttpResponse<JsonNode> response = Unirest
-                    .get(BASE_URL + "transfer/" + transferId).asJson();
+            final HttpResponse<JsonNode> response = get(
+                    baseUrl + "transfer/" + transferId).asJson();
 
             final long responseTime = currentTimeMillis() - start;
             if (responseTime > CUTOFF) {
@@ -151,6 +183,17 @@ public class HttpApiClient implements API {
      */
     @Override
     public void ping() {
-        throw new Error("NOT IMPLEMENTED..."); // TODO
+        final long start = currentTimeMillis();
+
+        try {
+            get(baseUrl + "ping").asJson();
+
+            final long responseTime = currentTimeMillis() - start;
+            if (responseTime > CUTOFF) {
+                out.println("ping took " + responseTime + " ms.");
+            }
+        } catch (UnirestException e) {
+            throw sneakyThrow(e);
+        }
     }
 }
