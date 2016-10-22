@@ -18,8 +18,8 @@ public class Transaction {
     }
 
     public final int transactionId;
-    public final int from;
-    public final int to;
-    public final int amount;
-    public final Status status;
+    public int from;
+    public int to;
+    public int amount;
+    public Status status;
 }

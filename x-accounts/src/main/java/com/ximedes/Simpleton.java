@@ -2,6 +2,7 @@ package com.ximedes;
 
 import static com.ximedes.Status.CONFIRMED;
 import static com.ximedes.Status.INSUFFICIENT_FUNDS;
+import static com.ximedes.Status.PENDING;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,13 +28,18 @@ public class Simpleton implements API {
 
     /**
      * Create a new backend server, setting up the per-account lock for each
-     * expected account.
+     * expected account. We also pre-allocate all transfer object, so that we
+     * don't have to allocate that memory at run-time. Instead, we have that
+     * overhead as part of starting up the server.
      */
     public Simpleton() {
         super();
 
         for (int i = 0; i < MAX_ACCOUNTS; i++) {
             locks[i] = new Object();
+        }
+        for (int i = 0; i < EXPECTED_TRANSFERS; i++) {
+            transfers[i] = new Transaction(i, -1, -1, -1, PENDING);
         }
     }
 
@@ -100,8 +106,12 @@ public class Simpleton implements API {
             }
         }
 
-        final Transaction transfer = new Transaction(
-                nextTransaction.getAndIncrement(), from, to, amount, status);
+        final Transaction transfer = transfers[nextTransaction
+                .getAndIncrement()];
+        transfer.from = from;
+        transfer.to = to;
+        transfer.amount = amount;
+        transfer.status = status;
         transfers[transfer.transactionId] = transfer;
         return transfer.transactionId;
     }
