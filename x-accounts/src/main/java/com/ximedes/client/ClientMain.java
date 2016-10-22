@@ -30,7 +30,7 @@ public class ClientMain {
     // for local, functional testing
     // private final API api = new Simpleton();
 
-    private static final API api = new HttpApiClient("http://127.0.0.1:8080/",
+    private static final API api = new HttpApiClient("http://172.31.3.73:8080/",
             110, 110);
 
     private static final Object transferCountLock = new Object();

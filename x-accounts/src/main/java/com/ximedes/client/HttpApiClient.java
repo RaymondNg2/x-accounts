@@ -45,8 +45,11 @@ class HttpApiClient implements API {
         super();
 
         this.baseUrl = baseUrl;
-
         Unirest.setConcurrency(maxTotal, maxPerRoute);
+
+        out.println("Connecting to " + baseUrl);
+        out.println("Max total " + maxTotal);
+        out.println("Max per route " + maxPerRoute);
     }
 
     /**
