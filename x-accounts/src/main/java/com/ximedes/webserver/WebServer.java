@@ -24,6 +24,20 @@ public class WebServer {
     private final API api;
     private final BlockingQueue<Socket> sockets = new LinkedBlockingQueue<>();
 
+    /**
+     * Set up a new web server.
+     * 
+     * @param port
+     *            The port to listed on.
+     * @param backlog
+     *            The backlog to use from the application, note that the
+     *            effective value is determined by a combination of this value
+     *            and the <code>ulimit(1)</code. settings for the running user.
+     * @param poolsize
+     *            The number of HTTP handling threads to spawn.
+     * @param api
+     *            The API to call when a request comes in and was parsed.
+     */
     public WebServer(final int port, final int backlog, final int poolsize,
             final API api) {
         super();
@@ -34,6 +48,15 @@ public class WebServer {
         this.api = api;
     }
 
+    /**
+     * Serve HTTP requests. This method blocks and only returns when a
+     * catastrophic exception is being thrown.
+     * 
+     * @throws IOException
+     *             When something happened and the server is inoperable.
+     * @throws InterruptedException
+     *             When the server was interrupted.
+     */
     public void serve() throws IOException, InterruptedException {
         err.println("Spawning " + poolsize + " HTTP threads.");
         for (int i = 0; i < poolsize; i++) {
@@ -43,11 +66,11 @@ public class WebServer {
 
         err.println("Binding to port " + port + ", backlog of " + backlog
                 + " pending connections.");
-        final ServerSocket serverSocker = new ServerSocket(port, backlog);
-        for (;;) {
-            final Socket socket = serverSocker.accept();
-            err.println("Accepted new connection.");
-            sockets.put(socket);
+        try (final ServerSocket serverSocker = new ServerSocket(port,
+                backlog)) {
+            for (;;) {
+                sockets.put(serverSocker.accept());
+            }
         }
     }
 }

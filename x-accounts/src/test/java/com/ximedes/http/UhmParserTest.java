@@ -1,7 +1,6 @@
 package com.ximedes.http;
 
 import static com.ximedes.Status.CONFIRMED;
-import static com.ximedes.http.UhmParser.uhmParseJsonLastInteger;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -15,34 +14,6 @@ import com.ximedes.Transaction;
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
 public class UhmParserTest {
-    /**
-     * A test case.
-     */
-    @Test
-    public void testThatCompactJsonIsParsed() {
-        final StringBuilder json = new StringBuilder("{\"overdraft\":123}");
-        assertEquals(123, uhmParseJsonLastInteger(json));
-    }
-
-    /**
-     * A test case.
-     */
-    @Test
-    public void testThatAiryJsonIsParsed() {
-        final StringBuilder json = new StringBuilder("{\"overdraft\": 123 }");
-        assertEquals(123, uhmParseJsonLastInteger(json));
-    }
-
-    /**
-     * A test case.
-     */
-    @Test
-    public void testThatMultilineJsonIsParsed() {
-        final StringBuilder json = new StringBuilder(
-                "{\"overdraft\":\n 123\n}");
-        assertEquals(123, uhmParseJsonLastInteger(json));
-    }
-
     /**
      * A test case.
      */

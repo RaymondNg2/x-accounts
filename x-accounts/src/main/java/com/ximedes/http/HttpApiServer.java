@@ -39,6 +39,7 @@ public class HttpApiServer {
                     try {
                         Thread.sleep(100);
                     } catch (InterruptedException e1) {
+                        // ignore, we are going down anyway.
                     }
                     exit(1);
                 } finally {

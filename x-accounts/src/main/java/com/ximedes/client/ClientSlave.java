@@ -1,22 +1,28 @@
 package com.ximedes.client;
 
-import com.ximedes.API;
-import com.ximedes.http.HttpUrlConnectionApiClient;
-
-import java.io.*;
 import static java.lang.System.exit;
 import static java.lang.System.out;
-import java.net.*;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.ximedes.API;
+import com.ximedes.http.HttpApiClient;
 
 public class ClientSlave {
 
 	private static final boolean trace = false;
 
-	private final API api = new HttpUrlConnectionApiClient();
+	private final API api = new HttpApiClient();
 
 	private final InetAddress multicastAddressStartCommand;
 	private final InetAddress multicastAddressFinished;

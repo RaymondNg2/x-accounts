@@ -1,21 +1,26 @@
 package com.ximedes.client;
 
-import com.ximedes.API;
-import com.ximedes.http.HttpUrlConnectionApiClient;
-
-import java.io.*;
 import static java.lang.System.out;
-import java.net.*;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.LocalDateTime;
+
+import com.ximedes.API;
+import com.ximedes.http.HttpApiClient;
 
 public class ClientMaster {
 
 	private static final boolean trace = false;
 	private static final int amountTestingNodes = 1;
 
-	private final API api = new HttpUrlConnectionApiClient();
+	private final API api = new HttpApiClient();
 	private final InetAddress multicastAddressStartCommand;
 	private final InetAddress multicastAddressListen;
 	private final int multicastPort = 24625;
