@@ -13,7 +13,6 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 import com.ximedes.API;
-import com.ximedes.http.HttpApiClient;
 
 public class ClientMaster {
 

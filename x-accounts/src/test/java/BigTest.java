@@ -20,7 +20,7 @@ import org.junit.Test;
 
 import com.ximedes.API;
 import com.ximedes.Transaction;
-import com.ximedes.http.HttpApiClient;
+import com.ximedes.client.HttpApiClient;
 
 /**
  * The big test scenario that is described on

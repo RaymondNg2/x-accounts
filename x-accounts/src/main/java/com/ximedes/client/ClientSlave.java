@@ -16,7 +16,6 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.ximedes.API;
-import com.ximedes.http.HttpApiClient;
 
 public class ClientSlave {
 

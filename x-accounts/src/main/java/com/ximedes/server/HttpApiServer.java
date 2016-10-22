@@ -1,4 +1,4 @@
-package com.ximedes.http;
+package com.ximedes.server;
 
 import static java.lang.System.err;
 import static java.lang.System.exit;
@@ -7,7 +7,6 @@ import java.io.IOException;
 
 import com.ximedes.API;
 import com.ximedes.Simpleton;
-import com.ximedes.webserver.WebServer;
 
 /**
  * The server-side HTTP wrapper.

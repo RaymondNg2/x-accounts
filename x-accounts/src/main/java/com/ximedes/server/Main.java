@@ -1,12 +1,10 @@
-package com.ximedes;
+package com.ximedes.server;
 
 import static java.lang.Long.MAX_VALUE;
 import static java.lang.System.err;
 import static java.lang.System.out;
 
 import java.util.Map;
-
-import com.ximedes.http.HttpApiServer;
 
 /**
  * The server's main class.

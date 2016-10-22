@@ -1,4 +1,4 @@
-package com.ximedes.http;
+package com.ximedes.client;
 
 import static com.mashape.unirest.http.Unirest.get;
 import static com.mashape.unirest.http.Unirest.post;

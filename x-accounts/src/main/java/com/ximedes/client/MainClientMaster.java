@@ -1,17 +1,16 @@
-package com.ximedes;
-
-import com.ximedes.client.ClientSlave;
+package com.ximedes.client;
 
 import static java.lang.System.out;
 import java.util.*;
 
 /**
- * The client's slave main class.
- *
+ * The client's master main class.
+ * This master creates the bank account and starts the slaves
+ * Always start all the slaves, AppNodes and dbNode before the master
  *
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */
-public class MainClientSlave {
+public class MainClientMaster {
 
 	/**
 	 * Start the HTTP server to serve the API requests for the challenge.
@@ -44,7 +43,7 @@ public class MainClientSlave {
 			}
 		}
 
-		final ClientSlave clientSlave = new ClientSlave();
-		clientSlave.startSlave();
+		final ClientMaster clientMaster = new ClientMaster();
+		clientMaster.fireXimedesTest();
 	}
 }

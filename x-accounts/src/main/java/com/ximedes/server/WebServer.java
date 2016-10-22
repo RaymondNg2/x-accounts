@@ -1,4 +1,4 @@
-package com.ximedes.webserver;
+package com.ximedes.server;
 
 import static java.lang.System.err;
 
