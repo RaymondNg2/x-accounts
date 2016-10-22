@@ -13,7 +13,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import org.junit.Test;
@@ -56,28 +55,6 @@ public class BigTest {
      */
     @Test
     public void big() throws Exception {
-        // Some system properties are useful to tweak the network stack. This is
-        // relevant for the HTTPUrlConnection class, but does not hurt for any
-        // of the other code.
-        //
-        // The only relevant tweaking I found make a different is
-        // http.maxConnections. That reduces the number of actual network
-        // connections being created and helps avoid spurious
-        // "java.net.SocketException: Invalid argument" messages.
-        //
-        // Best start the JVM with:
-        // -Djava.net.preferIPv4Stack=true
-        // -Dhttp.keepalive=true
-        // -Dhttp.maxConnections=110
-        final Map<Object, Object> properties = System.getProperties();
-        for (final Map.Entry<Object, Object> entry : properties.entrySet()) {
-            final String key = (String) entry.getKey();
-            if (key.startsWith("http.") || key.startsWith("java.net.")) {
-                out.println(entry.getKey() + "=" + entry.getValue());
-            }
-        }
-        out.println();
-
         final long start = currentTimeMillis();
 
         // 1 instance, 300.000 consumer accounts, 10 cents each
