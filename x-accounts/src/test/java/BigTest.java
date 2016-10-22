@@ -20,7 +20,7 @@ import org.junit.Test;
 
 import com.ximedes.API;
 import com.ximedes.Transaction;
-import com.ximedes.http.HttpUrlConnectionApiClient;
+import com.ximedes.http.HttpApiClient;
 
 /**
  * The big test scenario that is described on
@@ -33,7 +33,8 @@ public class BigTest {
     // private final API api = new Simpleton();
 
     // testing over HTTP using the bare Java HTTPUrlConnection client
-    private final API api = new HttpUrlConnectionApiClient();
+    // private final API api = new HttpUrlConnectionApiClient();
+    private final API api = new HttpApiClient();
 
     private static final Object transferCountLock = new Object();
     private static int transferCount = 0;

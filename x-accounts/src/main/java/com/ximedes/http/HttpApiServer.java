@@ -16,7 +16,7 @@ import com.ximedes.webserver.WebServer;
  */
 public class HttpApiServer {
     private final API api = new Simpleton();
-    private final WebServer webServer = new WebServer(8080, 1024, 250, api);
+    private final WebServer webServer = new WebServer(8080, 1024, 150, api);
 
     /**
      * Create and start a new web server on port 8080.
