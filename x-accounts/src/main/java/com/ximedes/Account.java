@@ -1,7 +1,7 @@
 package com.ximedes;
 
 /**
- * the representation of an account.
+ * The representation of an account.
  *
  * @author Kees Jan Koster &lt;kjkoster@kjkoster.org&gt;
  */

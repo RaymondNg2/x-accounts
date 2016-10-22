@@ -2,8 +2,8 @@ package com.ximedes.http;
 
 import static com.mashape.unirest.http.Unirest.get;
 import static com.mashape.unirest.http.Unirest.post;
-import static com.ximedes.http.UhmParser.uhmParseUriLastInteger;
 import static com.ximedes.utils.SneakyThrows.sneakyThrow;
+import static java.lang.Integer.parseInt;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.out;
 
@@ -82,6 +82,19 @@ public class HttpApiClient implements API {
         } catch (UnirestException e) {
             throw sneakyThrow(e);
         }
+    }
+
+    /**
+     * Chop the last bit off of an URI and use that as an integer value.
+     * 
+     * @param uri
+     *            The URI to ... uhm ... parse.
+     * @return The integer value of the last bit of the URI.
+     */
+    private int uhmParseUriLastInteger(final String uri) {
+        final int lastSlash = uri.lastIndexOf('/');
+
+        return parseInt(uri.substring(lastSlash + 1).trim());
     }
 
     /**
