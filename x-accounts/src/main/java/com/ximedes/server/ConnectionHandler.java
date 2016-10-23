@@ -26,6 +26,28 @@ class ConnectionHandler implements Runnable {
 
     private static final boolean trace = false;
 
+    // To save memory allocation overhead at run-time, we pre-allocate the HTTP
+    // responses to the HTTP POST requests.
+    private static final int EXPECTED_TRANSFERS = 300000 + 3600000;
+    private static final byte[][] transferResponses = new byte[EXPECTED_TRANSFERS][];
+    private static final int EXPECTED_ACCOUNTS = 300000 + 300 + 1;
+    private static final byte[][] createAccountResponses = new byte[EXPECTED_ACCOUNTS][];
+
+    static {
+        err.println("Pre-allocating " + EXPECTED_TRANSFERS
+                + " transfer HTTP responses.");
+        for (int i = 0; i < EXPECTED_TRANSFERS; i++) {
+            transferResponses[i] = ("HTTP/1.1 202 ACCEPTED\nLocation: /transfer/"
+                    + i + "\nContent-Length: 0\n\n").getBytes();
+        }
+        err.println("Pre-allocating " + EXPECTED_ACCOUNTS
+                + " transfer HTTP responses.");
+        for (int i = 0; i < EXPECTED_ACCOUNTS; i++) {
+            createAccountResponses[i] = ("HTTP/1.1 202 ACCEPTED\nLocation: /account/"
+                    + i + "\nContent-Length: 0\n\n").getBytes();
+        }
+    }
+
     public ConnectionHandler(final BlockingQueue<Socket> sockets,
             final API api) {
         super();
@@ -57,11 +79,11 @@ class ConnectionHandler implements Runnable {
                         break;
                     } else if (isPOST(httpRequest)) {
                         requestSize = readBody(is, httpRequest, requestSize);
-                        final String response = handlePOST(httpRequest,
+                        final byte[] response = handlePOST(httpRequest,
                                 requestSize);
                         writeResponse(response, os);
                     } else {
-                        final String response = handleGET(httpRequest,
+                        final byte[] response = handleGET(httpRequest,
                                 requestSize);
                         writeResponse(response, os);
                     }
@@ -151,26 +173,19 @@ class ConnectionHandler implements Runnable {
      * 
      * @return The HTTP response text.
      */
-    private String handlePOST(final byte[] httpRequest, final int requestSize) {
-        final String path;
-        final int id;
+    private byte[] handlePOST(final byte[] httpRequest, final int requestSize) {
         switch (httpRequest[6]) {
         case 'a':
-            path = "/account/";
-            id = createAccount(httpRequest, requestSize);
-            break;
+            final int accountId = createAccount(httpRequest, requestSize);
+            return createAccountResponses[accountId];
         case 't':
-            path = "/transfer/";
-            id = transfer(httpRequest, requestSize);
-            break;
+            final int transferId = transfer(httpRequest, requestSize);
+            return transferResponses[transferId];
         default:
             throw new IllegalArgumentException(
                     "Found bad path " + (char) httpRequest[6] + " on ["
                             + new String(httpRequest, 0, requestSize) + "]");
         }
-
-        return "HTTP/1.1 202 ACCEPTED\nLocation: " + path + id
-                + "\nContent-Length: 0\n\n";
     }
 
     /**
@@ -270,7 +285,7 @@ class ConnectionHandler implements Runnable {
      * 
      * We then optionally grab the identifier from the path.
      */
-    private String handleGET(final byte[] httpRequest, final int requestSize) {
+    private byte[] handleGET(final byte[] httpRequest, final int requestSize) {
         final StringBuilder response = new StringBuilder("");
         switch (httpRequest[5]) {
         case 'a':
@@ -308,7 +323,7 @@ class ConnectionHandler implements Runnable {
         final int contentLength = response.length();
         response.insert(0, "\n\n").insert(0, contentLength).insert(0,
                 "HTTP/1.1 200 OK\nContent-Length: ");
-        return response.toString();
+        return response.toString().getBytes();
     }
 
     /**
@@ -340,13 +355,13 @@ class ConnectionHandler implements Runnable {
         return value;
     }
 
-    private void writeResponse(final String response, final OutputStream os)
+    private void writeResponse(final byte[] response, final OutputStream os)
             throws IOException {
         if (trace) {
-            err.println(response);
+            err.println(new String(response));
         }
 
-        os.write(response.getBytes());
+        os.write(response);
         os.flush();
     }
 
