@@ -364,18 +364,4 @@ class ConnectionHandler implements Runnable {
         os.write(response);
         os.flush();
     }
-
-    /**
-     * Reader and ... uhm ... parse the headers of the HTTP request. We could
-     * parse the headers properly, but they are completely irrelevant to our
-     * application. We can safely ignore the lot of them.
-     * <p>
-     * What we do need is to know what HTTP method is being called and which
-     * path it is being called on. We can do that quite quickly by using the
-     * first letter of the first HTTP header line, plus the 7th letter on that
-     * same line. Those two uniquely identify the caller's intent. This is shown
-     * below with brackets around the 1st and 7nd letters.
-     * 
-     * 
-     */
 }

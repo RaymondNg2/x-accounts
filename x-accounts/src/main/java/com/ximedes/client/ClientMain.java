@@ -45,6 +45,14 @@ public class ClientMain {
         }
     }
 
+    /**
+     * Run the whole challenge test procedure on a single machine.
+     * 
+     * @param args
+     *            Ignored.
+     * @throws Exception
+     *             When the test failed.
+     */
     public static void main(final String[] args) throws Exception {
         final long start = currentTimeMillis();
 
@@ -121,7 +129,6 @@ public class ClientMain {
             final List<Integer> merchantAccounts,
             final List<Integer> consumerAccounts) {
         for (int iteration = 0; iteration < 3; iteration++) {
-
             // XXX wrong level, needs to be up one level
             final int newMerchantAccount = createOneMerchantAccount();
             final Collection<Integer> newConsumerAccounts = create1000ConsumerAccounts();
