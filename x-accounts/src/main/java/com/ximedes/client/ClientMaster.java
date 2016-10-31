@@ -1,33 +1,26 @@
 package com.ximedes.client;
 
-import static java.lang.System.out;
+import com.hazelcast.core.IMap;
+import com.ximedes.API;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
+import static java.lang.System.out;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.LocalDateTime;
-
-import com.ximedes.API;
 
 public class ClientMaster {
 
 	private static final boolean trace = false;
 	private static final int amountTestingNodes = 1;
 
-    private final API api = new HttpApiClient("http://127.0.0.1:8080/",
-            110, 110);
-	private final InetAddress multicastAddressStartCommand;
-	private final InetAddress multicastAddressListen;
-	private final int multicastPort = 24625;
+	private final API api = new HttpApiClient("http://127.0.0.1:8080/",
+											  110, 110);
+	private final IMap<Integer, Integer> startCommand;
+	private final IMap<String, Integer> slavesFinished;
 
 	public ClientMaster() throws UnknownHostException {
-		this.multicastAddressStartCommand = InetAddress.getByName("232.57.108.73");
-		this.multicastAddressListen = InetAddress.getByName("232.57.108.74");
+		startCommand = HazelcastConfig.hazelcastInstance().getMap("startCommand");
+		slavesFinished = HazelcastConfig.hazelcastInstance().getMap("slavesFinished");
 	}
 
 	public void fireXimedesTest() {
@@ -53,53 +46,16 @@ public class ClientMaster {
 	}
 
 	private void sendStartMessageToSlaves(int backAccountId) {
-		byte[] msg = ByteBuffer.allocate(4).putInt(backAccountId).array();
-
-		// Open a new DatagramSocket, which will be used to send the data.
-		try (DatagramSocket serverSocket = new DatagramSocket()) {
-			// Create a packet that will contain the data
-			// (in the form of bytes) and send it.
-			DatagramPacket msgPacket = new DatagramPacket(msg,
-														  msg.length,
-														  multicastAddressStartCommand,
-														  multicastPort);
-			if (trace) {
-				out.println("ClientMaster sends start message to ClientSlaves on multicast address " + multicastAddressStartCommand.getHostAddress() + ":" + multicastPort);
-			}
-
-			serverSocket.send(msgPacket);
-			serverSocket.close();
-		} catch (IOException ex) {
-			// what should be done when this is catched?
-			// for now output it
-			out.println("ERROR: " + ex.getMessage());
-		}
+		startCommand.put(1, backAccountId);
 	}
 
 	private void listenForSlaves() {
-		byte[] buf = new byte[256];
-
-		try (MulticastSocket clientSocket = new MulticastSocket(multicastPort)) {
-			clientSocket.joinGroup(multicastAddressListen);
-
-			if (trace) {
-				out.println("ClientMaster started to listen for slaves on " + multicastAddressListen.getHostAddress() + ":" + multicastPort);
+		try {
+			while (slavesFinished.size() < amountTestingNodes) {
+				Thread.sleep(500);
 			}
-			for (int i = 0; i < amountTestingNodes; i++) {
-				DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
-				// clientSocket.receive is blocking
-				clientSocket.receive(msgPacket);
-
-				if (trace) {
-					String msg = new String(buf, 0, buf.length);
-					out.println("ClientSlave is done: " + msg);
-				}
-			}
-
-			clientSocket.leaveGroup(multicastAddressListen);
-			clientSocket.close();
-		} catch (IOException ex) {
-			out.println("ERROR: " + ex.getMessage());
+		} catch (InterruptedException ex) {
+			out.println(ex);
 		}
 	}
 }

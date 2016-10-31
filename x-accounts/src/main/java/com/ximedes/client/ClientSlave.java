@@ -1,39 +1,32 @@
 package com.ximedes.client;
 
+import com.hazelcast.core.IMap;
+import com.ximedes.API;
+
 import static java.lang.System.exit;
 import static java.lang.System.out;
-
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
+import java.net.Inet4Address;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.ximedes.API;
+import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.*;
 
 public class ClientSlave {
 
 	private static final boolean trace = false;
 
 	private final API api = new HttpApiClient("http://127.0.0.1:8080/",
-            110, 110);
-
-	private final InetAddress multicastAddressStartCommand;
-	private final InetAddress multicastAddressFinished;
-	private final int multicastPort = 24625;
+											  110, 110);
 
 	private final AtomicInteger amountScenariosFinished = new AtomicInteger();
 	private int bankAccount;
 
-	public ClientSlave() throws UnknownHostException {
-		this.multicastAddressStartCommand = InetAddress.getByName("232.57.108.73");
-		this.multicastAddressFinished = InetAddress.getByName("232.57.108.74");
+	private final IMap<Integer, Integer> startCommand;
+	private final IMap<String, Integer> slavesFinished;
+
+	public ClientSlave() {
+		startCommand = HazelcastConfig.hazelcastInstance().getMap("startCommand");
+		slavesFinished = HazelcastConfig.hazelcastInstance().getMap("slavesFinished");
 	}
 
 	public void startSlave() throws InterruptedException {
@@ -62,8 +55,12 @@ public class ClientSlave {
 			machines[machine].join();
 		}
 
-		// send done to ClientMaster
-		sendFinishedMessageToMaster();
+		try {
+			// send done to ClientMaster
+			sendFinishedMessageToMaster();
+		} catch (UnknownHostException ex) {
+			out.println(ex);
+		}
 	}
 
 	private void runScenario() throws InterruptedException {
@@ -166,52 +163,27 @@ public class ClientSlave {
 	}
 
 	private void listenForStartCommand() {
-		byte[] buf = new byte[256];
 
-		try (MulticastSocket clientSocket = new MulticastSocket(multicastPort)) {
-			clientSocket.joinGroup(multicastAddressStartCommand);
+		if (trace) {
+			out.println("ClientSlave started to listen for startcommand on hazelcast");
+		}
 
-			if (trace) {
-				out.println("ClientSlave started to listen for startcommand on " + multicastAddressStartCommand.getHostAddress() + ":" + multicastPort);
+		try {
+			while (startCommand.isEmpty()) {
+				Thread.sleep(100);
 			}
+		} catch (InterruptedException ex) {
+			out.println(ex);
+		}
 
-			DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
-			// clientSocket.receive is blocking
-			clientSocket.receive(msgPacket);
+		bankAccount = startCommand.get(1);
 
-			bankAccount = ByteBuffer.wrap(buf).getInt();
-			if (trace) {
-				out.println("Received BankAccount " + bankAccount);
-			}
-
-			clientSocket.leaveGroup(multicastAddressStartCommand);
-			clientSocket.close();
-		} catch (IOException ex) {
-			out.println("ERROR: " + ex.getMessage());
+		if (trace) {
+			out.println("Received BankAccount " + bankAccount);
 		}
 	}
 
-	private void sendFinishedMessageToMaster() {
-		byte[] msg = "done".getBytes();
-
-		// Open a new DatagramSocket, which will be used to send the data.
-		try (DatagramSocket serverSocket = new DatagramSocket()) {
-			// Create a packet that will contain the data
-			// (in the form of bytes) and send it.
-			DatagramPacket msgPacket = new DatagramPacket(msg,
-														  msg.length,
-														  multicastAddressFinished,
-														  multicastPort);
-			if (trace) {
-				out.println("ClientSlave sends finished message to ClientMaster on multicast address " + multicastAddressFinished.getHostAddress() + ":" + multicastPort);
-			}
-
-			serverSocket.send(msgPacket);
-			serverSocket.close();
-		} catch (IOException ex) {
-			// what should be done when this is catched?
-			// for now output it
-			out.println("ERROR: " + ex.getMessage());
-		}
+	private void sendFinishedMessageToMaster() throws UnknownHostException {
+		slavesFinished.put(Inet4Address.getLocalHost().getHostAddress(), 1);
 	}
 }
