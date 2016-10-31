@@ -11,7 +11,6 @@ public class HazelcastConfig {
 	public static final String HAZELCAST_NAME = "x-accounts";
 	public static final String HAZELCAST_PASSWORD = "x-accounts.hazelcast.password";
 	public static final String HAZELCAST_MULTICASTGROUP = "232.57.108.73";
-	public static final Boolean HAZELCAST_ENABLED = true;
 
 	public static HazelcastInstance hazelcastInstance() {
 
@@ -21,14 +20,6 @@ public class HazelcastConfig {
 
 		JoinConfig join = config.getNetworkConfig().getJoin();
 		join.getMulticastConfig().setEnabled(true).setMulticastGroup(HAZELCAST_MULTICASTGROUP);
-
-		// switch it all off during development
-		if (!HAZELCAST_ENABLED) {
-			config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
-			config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-			config.getNetworkConfig().getJoin().getAwsConfig().setEnabled(false);
-		}
-
 		ExecutorConfig executorConfig = config.getExecutorConfig("executor");
 		executorConfig.setPoolSize(1).setQueueCapacity(50).setStatisticsEnabled(true);
 

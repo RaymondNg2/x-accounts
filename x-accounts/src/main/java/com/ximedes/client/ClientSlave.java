@@ -2,6 +2,7 @@ package com.ximedes.client;
 
 import com.hazelcast.core.IMap;
 import com.ximedes.API;
+import com.ximedes.Account;
 
 import static java.lang.System.exit;
 import static java.lang.System.out;
@@ -84,14 +85,22 @@ public class ClientSlave {
 			// create 10 threads
 			final Thread[] transferThread = new Thread[10];
 			for (int thread = 0; thread < 10; thread++) {
-				transferThread[thread] = new Thread(new TransferThread(merchantAccount, consumerAccounts.subList(100 * thread, 100 * thread + 99)));
+				transferThread[thread] = new Thread(new TransferThread(merchantAccount, consumerAccounts.subList(100 * thread, 100 * thread + 100)));
 				transferThread[thread].start();
 			}
 			for (int machine = 0; machine < 10; machine++) {
 				transferThread[machine].join();
 			}
 			/* merchant should have 10000 cents */
-			// method not yet in api to check the balance of an account
+			do {
+				Account account = api.getAccount(merchantAccount);
+				if (account.balance != 10000) {
+					out.println("merchantAccount " + merchantAccount + " should have 10000 but has " + account.balance);
+				} else {
+					break;
+				}
+				Thread.sleep(100);
+			} while (true);
 		}
 	}
 
