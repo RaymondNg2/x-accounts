@@ -7,4 +7,5 @@
 
 scp x-accounts/target/x-accounts-0.0.1-SNAPSHOT.jar run.db0.sh db0:
 scp x-accounts/target/x-accounts-0.0.1-SNAPSHOT.jar run.load-master0.sh load-master0:
+scp x-accounts/target/x-accounts-0.0.1-SNAPSHOT.jar run.load-slave0.sh load-slave0:
 

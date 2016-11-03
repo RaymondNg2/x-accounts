@@ -16,7 +16,7 @@ public class ClientSlave {
 
 	private static final boolean trace = false;
 
-	private final API api = new HttpApiClient("http://127.0.0.1:8080/",
+	private final API api = new HttpApiClient("http://172.31.3.73:8080/",
 											  110, 110);
 
 	private final AtomicInteger amountScenariosFinished = new AtomicInteger();
