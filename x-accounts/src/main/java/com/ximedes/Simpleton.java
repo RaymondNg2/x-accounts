@@ -3,6 +3,7 @@ package com.ximedes;
 import static com.ximedes.Status.CONFIRMED;
 import static com.ximedes.Status.INSUFFICIENT_FUNDS;
 import static com.ximedes.Status.PENDING;
+import static java.lang.Math.max;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,14 +16,16 @@ public class Simpleton implements API {
     private final AtomicInteger nextAccount = new AtomicInteger(0);
 
     // 300.000 consumer accounts, 300 merchant accounts and 1 back account
-    private static final int MAX_ACCOUNTS = 300301;
+    private static final int MAX_ACCOUNTS = 500000; // 300301
     private final Object[] locks = new Object[MAX_ACCOUNTS];
     private final int[] balance = new int[MAX_ACCOUNTS];
 
+    private final Object highestBankAccountLock = new Object();
+    private int highestBankAccount = 0;
     private int bankOverdraft = -1;
 
     // It's a bit less than that, but let's not be picky about some RAM.
-    private static final int EXPECTED_TRANSFERS = 4000000;
+    private static final int EXPECTED_TRANSFERS = 5000000;
     private final Transaction[] transfers = new Transaction[EXPECTED_TRANSFERS];
     private final AtomicInteger nextTransaction = new AtomicInteger(0);
 
@@ -48,23 +51,23 @@ public class Simpleton implements API {
      */
     @Override
     public int createAccount(final int overdraft) {
-        if (nextAccount.get() == 0) {
-            if (overdraft < 1) {
-                throw new IllegalArgumentException(
-                        "expected a large overdraft for bank account, found "
-                                + nextAccount.get());
-            }
-            balance[0] = overdraft;
-            bankOverdraft = overdraft;
-        } else if (overdraft != 0) {
-            throw new IllegalArgumentException(
-                    "expected overdraft to be 0, found " + overdraft);
-        }
-        if (nextAccount.get() >= MAX_ACCOUNTS) {
+        final int accountId = nextAccount.getAndIncrement();
+        if (accountId >= MAX_ACCOUNTS) {
             throw new IllegalStateException("creating more than MAX_ACCOUNTS");
         }
 
-        return nextAccount.getAndIncrement();
+        if (overdraft > 0) { // a bank account
+            balance[accountId] = overdraft;
+            bankOverdraft = overdraft;
+
+            synchronized (highestBankAccountLock) {
+                // keep track of what bank accounts we have, so we can yield the
+                // correct response at the end of the run
+                highestBankAccount = max(accountId, highestBankAccount);
+            }
+        }
+
+        return accountId;
     }
 
     /**
@@ -72,8 +75,15 @@ public class Simpleton implements API {
      */
     @Override
     public Account getAccount(final int accountId) {
-        return new Account(accountId, balance[accountId],
-                accountId == 0 ? bankOverdraft : 0);
+        int bal = balance[accountId];
+        int overd = 0;
+
+        if (accountId <= highestBankAccount) {
+            bal -= bankOverdraft;
+            overd = bankOverdraft;
+        }
+
+        return new Account(accountId, bal, overd);
     }
 
     /**
